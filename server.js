@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const path = require('path');
+app.use(express.static(path.join(__dirname)));
+
 // ─────────────────────────────────────────
 // COLE SUA CHAVE GROQ AQUI
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
