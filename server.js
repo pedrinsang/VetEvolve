@@ -7,7 +7,7 @@ app.use(express.json());
 
 // ─────────────────────────────────────────
 // COLE SUA CHAVE GROQ AQUI
-const GROQ_API_KEY = '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';
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // ─────────────────────────────────────────
 
 const PROMPTS = {
@@ -133,3 +133,5 @@ app.post('/gerar', async (req, res) => {
 app.listen(3000, () => {
   console.log('✅ VetEvolve backend rodando em http://localhost:3000');
 });
+
+require('dotenv').config();
