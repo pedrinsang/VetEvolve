@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetEvolve — Evolução Clínica Inteligente</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0d; --surface: #111a15; --surface2: #172010;
+    --border: #1e3025; --border2: #2a4535;
+    --accent: #3ddc84; --accent2: #2ab86a;
+    --accent-dim: rgba(61,220,132,0.12); --accent-glow: rgba(61,220,132,0.25);
+    --text: #e8f5ee; --text2: #8aac97; --text3: #4d7a60;
+    --red: #ff5e5e; --yellow: #f5c842;
+    --mono: 'DM Mono', monospace; --sans: 'Sora', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(61,220,132,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(61,220,132,0.03) 1px, transparent 1px);
+    background-size: 40px 40px; pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: ''; position: fixed; top: -200px; right: -200px; width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(61,220,132,0.06) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* AUTH */
+  #authScreen { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .auth-logo-mark { width: 40px; height: 40px; border: 1.5px solid var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 16px; color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+  .auth-logo-text { font-size: 18px; font-weight: 700; }
+  .auth-logo-text span { color: var(--accent); }
+  .auth-tabs { display: flex; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 28px; overflow: hidden; }
+  .auth-tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; background: transparent; border: none; }
+  .auth-tab.active { background: var(--accent-dim); color: var(--accent); }
+  .auth-field { margin-bottom: 16px; }
+  .auth-field label { display: block; font-size: 11px; font-family: var(--mono); color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .auth-field input { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 13px; padding: 11px 14px; outline: none; transition: border-color 0.2s; }
+  .auth-field input:focus { border-color: var(--accent); }
+  .auth-btn { width: 100%; padding: 13px; background: var(--accent); color: var(--bg); border: none; border-radius: 10px; font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .auth-btn:hover { background: var(--accent2); }
+  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-error { background: rgba(255,94,94,0.08); border: 1px solid rgba(255,94,94,0.3); border-radius: 8px; padding: 10px 14px; color: var(--red); font-size: 12px; margin-bottom: 14px; display: none; }
+  .auth-error.visible { display: block; }
+  .auth-divider { text-align: center; font-size: 11px; color: var(--text3); margin-top: 16px; font-family: var(--mono); }
+
+  /* APP */
+  #appScreen { display: none; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  header { padding: 28px 0 0; display: flex; align-items: center; gap: 16px; }
+  .logo-mark { width: 42px; height: 42px; border: 1.5px solid var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 18px; color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); }
+  .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+  .user-bar { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .user-email { font-size: 12px; font-family: var(--mono); color: var(--text3); }
+  .btn-sm { font-size: 11px; font-family: var(--mono); color: var(--text2); border: 1px solid var(--border2); padding: 5px 12px; border-radius: 8px; cursor: pointer; background: transparent; transition: all 0.2s; }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .hero { padding: 36px 0 28px; }
+  .hero-tag { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .hero-tag::before { content: ''; width: 20px; height: 1px; background: var(--accent); }
+  h1 { font-size: clamp(24px, 3.5vw, 38px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 12px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .hero-sub { font-size: 14px; color: var(--text2); font-weight: 300; max-width: 520px; line-height: 1.7; }
+  .steps-bar { display: flex; margin: 24px 0 20px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .step { flex: 1; padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-right: 1px solid var(--border); transition: background 0.2s; }
+  .step:last-child { border-right: none; }
+  .step.active { background: var(--accent-dim); }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; color: var(--text3); flex-shrink: 0; transition: all 0.2s; }
+  .step.active .step-num { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+  .step.done .step-num { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .step-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .step.active .step-label { color: var(--text); }
+  .select-row { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+  .select-row label { font-size: 12px; color: var(--text2); font-family: var(--mono); white-space: nowrap; }
+  select { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 8px 14px; outline: none; cursor: pointer; transition: border-color 0.2s; }
+  select:hover, select:focus { border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: border-color 0.2s; }
+  .panel:focus-within { border-color: var(--border2); }
+  .panel-header { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--surface2); }
+  .panel-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--accent-dim); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .panel-hint { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-left: auto; }
+  textarea { width: 100%; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.7; padding: 16px; resize: none; height: 210px; }
+  textarea::placeholder { color: var(--text3); line-height: 1.8; }
+  .btn-main { width: 100%; padding: 15px; background: var(--accent); color: var(--bg); border: none; border-radius: 12px; font-family: var(--sans); font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; margin-bottom: 20px; box-shadow: 0 4px 20px var(--accent-glow); }
+  .btn-main:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 30px var(--accent-glow); }
+  .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.3); border-top-color: var(--bg); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box { background: rgba(255,94,94,0.08); border: 1px solid rgba(255,94,94,0.3); border-radius: 10px; padding: 13px 18px; color: var(--red); font-size: 13px; display: none; margin-bottom: 16px; }
+  .error-box.visible { display: block; }
+  .result-section { display: none; margin-bottom: 40px; }
+  .result-section.visible { display: block; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .result-title { font-size: 15px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .result-title::before { content: '✓'; width: 22px; height: 22px; background: var(--accent); color: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .btn-copy { background: var(--surface); border: 1px solid var(--border2); color: var(--text2); font-family: var(--mono); font-size: 12px; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .result-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; }
+  .result-content { padding: 24px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  footer { border-top: 1px solid var(--border); padding: 20px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer p { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .disclaimer { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px; }
+  .disclaimer::before { content: '⚠'; color: var(--yellow); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface); border: 1px solid var(--accent); color: var(--accent); font-family: var(--mono); font-size: 13px; padding: 10px 20px; border-radius: 30px; transition: transform 0.3s; z-index: 999; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } .steps-bar { display: none; } h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">V+</div>
+      <div class="auth-logo-text">Vet<span>Evolve</span></div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="setAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="setAuthTab('signup')">Criar conta</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-field">
+      <label>E-mail</label>
+      <input type="email" id="authEmail" placeholder="seu@email.com" />
+    </div>
+    <div class="auth-field">
+      <label>Senha</label>
+      <input type="password" id="authPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()" />
+    </div>
+    <button class="auth-btn" id="authBtn" onclick="doAuth()">
+      <span id="authBtnText">Entrar</span>
+    </button>
+    <div class="auth-divider" id="authHint">Não tem conta? Clique em "Criar conta" acima.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="container">
+    <header>
+      <div class="logo-mark">V+</div>
+      <div class="logo-text">Vet<span>Evolve</span></div>
+      <div class="user-bar">
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn-sm" onclick="doLogout()">Sair</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-tag">Prontuário Inteligente</div>
+      <h1>Evolução clínica<br><em>estruturada em segundos</em></h1>
+      <p class="hero-sub">Cole a ficha anterior + jogue as informações novas de qualquer forma. A IA organiza tudo no formato SOAP profissional.</p>
+    </section>
+
+    <div class="steps-bar">
+      <div class="step active" id="step1"><div class="step-num">1</div><span class="step-label">Ficha anterior</span></div>
+      <div class="step" id="step2"><div class="step-num">2</div><span class="step-label">Novas informações</span></div>
+      <div class="step" id="step3"><div class="step-num">3</div><span class="step-label">Gerar evolução</span></div>
+      <div class="step" id="step4"><div class="step-num">4</div><span class="step-label">Revisar & salvar</span></div>
+    </div>
+
+    <div class="select-row">
+      <label>Especialidade:</label>
+      <select id="especialidade">
+        <option>Clínica Geral</option><option>Emergência / UTI</option>
+        <option>Pós-operatório / Cirurgia</option><option>Oncologia</option>
+        <option>Ortopedia</option><option>Cardiologia</option>
+        <option>Neurologia</option><option>Dermatologia</option>
+      </select>
+      <label style="margin-left:12px">Espécie:</label>
+      <select id="especie">
+        <option>Canino</option><option>Felino</option>
+        <option>Ave</option><option>Exótico</option>
+        <option>Equino</option><option>Bovino</option>
+      </select>
+      <label style="margin-left:12px">Formato:</label>
+      <div style="display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden" id="formatoToggle">
+        <button onclick="setFormato('SOAP')" id="btnSOAP"
+          style="padding:8px 18px;font-family:var(--mono);font-size:12px;border:none;cursor:pointer;transition:all 0.2s;background:var(--accent);color:var(--bg);font-weight:600">
+          SOAP
+        </button>
+        <button onclick="setFormato('SBAR')" id="btnSBAR"
+          style="padding:8px 18px;font-family:var(--mono);font-size:12px;border:none;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--text2)">
+          SBAR
+        </button>
+      </div>
+    </div>
+
+    <div id="formatoInfo" style="margin-bottom:16px;padding:12px 16px;border-radius:10px;font-size:12px;font-family:var(--mono);line-height:1.7;transition:all 0.3s;background:rgba(61,220,132,0.06);border:1px solid rgba(61,220,132,0.15);color:var(--text2)">
+      <span id="formatoInfoText">📋 <strong style="color:var(--text)">SOAP</strong> — Subjetivo · Objetivo · Avaliação · Plano. Formato padrão para clínicas e consultórios.</span>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-icon">📋</div>
+          <span class="panel-title">Ficha / Evolução anterior</span>
+          <span class="panel-hint">opcional</span>
+        </div>
+        <textarea id="fichaAnterior" placeholder="Cole aqui a ficha ou evolução anterior do paciente...
+
+Pode ser texto corrido, formato SOAP, anotações — qualquer formato.
+
+Ou deixe em branco para criar do zero."></textarea>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-icon">✏️</div>
+          <span class="panel-title">Informações novas</span>
+          <span class="panel-hint">obrigatório</span>
+        </div>
+        <textarea id="novasInfos" placeholder="Jogue as informações novas aqui — sem se preocupar com formato:
+
+Ex: paciente comeu pela manhã, temp 38.9, FC 112, ainda com vômito esporádico mas menos freq que ontem, mantive ondansetrona e fluido...
+
+Fale naturalmente — a IA organiza tudo."></textarea>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <button class="btn-main" id="btnGerar" onclick="gerarEvolucao()">
+      <span id="btnIcon">⚡</span>
+      <span id="btnText">Gerar Evolução Estruturada</span>
+    </button>
+
+    <section class="result-section" id="resultSection">
+      <div class="result-header">
+        <div class="result-title">Evolução gerada com sucesso</div>
+        <button class="btn-copy" onclick="copiarTexto()"><span id="copyIcon">⎘</span> Copiar</button>
+      </div>
+      <div class="result-box">
+        <div class="result-content" id="resultContent"></div>
+      </div>
+    </section>
+
+    <footer>
+      <p>VetEvolve © 2025</p>
+      <p class="disclaimer">A IA auxilia, mas a responsabilidade clínica é sempre do veterinário. Revise antes de assinar.</p>
+    </footer>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCseiSOpzBRYjs3xt0Cxu74y6BS52a-Hcc",
+  authDomain: "vetevolve-534eb.firebaseapp.com",
+  projectId: "vetevolve-534eb",
+  storageBucket: "vetevolve-534eb.firebasestorage.app",
+  messagingSenderId: "155326539242",
+  appId: "1:155326539242:web:a889b450cb2a2397a93e93"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// ── AUTH STATE ──
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    document.getElementById('userEmail').textContent = user.email;
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+  }
+});
+
+let authMode = 'login';
+
+window.setAuthTab = (mode) => {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t, i) =>
+    t.classList.toggle('active', (i === 0 && mode === 'login') || (i === 1 && mode === 'signup'))
+  );
+  document.getElementById('authBtnText').textContent = mode === 'login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('authHint').textContent = mode === 'login'
+    ? 'Não tem conta? Clique em "Criar conta" acima.'
+    : 'Já tem conta? Clique em "Entrar" acima.';
+  document.getElementById('authError').classList.remove('visible');
+};
+
+window.doAuth = async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  const btn = document.getElementById('authBtn');
+
+  errEl.classList.remove('visible');
+  if (!email || !password) { errEl.textContent = 'Preencha e-mail e senha.'; errEl.classList.add('visible'); return; }
+  if (password.length < 6) { errEl.textContent = 'Senha deve ter ao menos 6 caracteres.'; errEl.classList.add('visible'); return; }
+
+  btn.disabled = true;
+  document.getElementById('authBtnText').textContent = '...';
+  try {
+    if (authMode === 'login') await signInWithEmailAndPassword(auth, email, password);
+    else await createUserWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    const msgs = {
+      'auth/user-not-found': 'Conta não encontrada.',
+      'auth/wrong-password': 'Senha incorreta.',
+      'auth/email-already-in-use': 'E-mail já cadastrado.',
+      'auth/invalid-email': 'E-mail inválido.',
+      'auth/invalid-credential': 'E-mail ou senha incorretos.',
+    };
+    errEl.textContent = msgs[e.code] || e.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('authBtnText').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta';
+  }
+};
+
+window.doLogout = () => signOut(auth);
+
+// ── FORMATO TOGGLE ──
+window.formatoAtual = 'SOAP';
+window.setFormato = (f) => {
+  window.formatoAtual = f;
+  const btnSOAP = document.getElementById('btnSOAP');
+  const btnSBAR = document.getElementById('btnSBAR');
+  const info = document.getElementById('formatoInfoText');
+  if (f === 'SOAP') {
+    btnSOAP.style.background = 'var(--accent)'; btnSOAP.style.color = 'var(--bg)'; btnSOAP.style.fontWeight = '600';
+    btnSBAR.style.background = 'transparent'; btnSBAR.style.color = 'var(--text2)'; btnSBAR.style.fontWeight = 'normal';
+    info.innerHTML = '📋 <strong style="color:var(--text)">SOAP</strong> — Subjetivo · Objetivo · Avaliação · Plano. Formato padrão para clínicas e consultórios.';
+  } else {
+    btnSBAR.style.background = 'var(--accent)'; btnSBAR.style.color = 'var(--bg)'; btnSBAR.style.fontWeight = '600';
+    btnSOAP.style.background = 'transparent'; btnSOAP.style.color = 'var(--text2)'; btnSOAP.style.fontWeight = 'normal';
+    info.innerHTML = '🏥 <strong style="color:var(--text)">SBAR</strong> — Situation · Background · Assessment · Recommendation. Formato hospitalar para comunicação entre equipes.';
+  }
+};
+
+// ── GERAR ──
+window.gerarEvolucao = async () => {
+  const fichaAnterior = document.getElementById('fichaAnterior').value.trim();
+  const novasInfos = document.getElementById('novasInfos').value.trim();
+  const especialidade = document.getElementById('especialidade').value;
+  const especie = document.getElementById('especie').value;
+  const errorBox = document.getElementById('errorBox');
+
+  errorBox.classList.remove('visible');
+  if (!novasInfos) {
+    errorBox.textContent = '⚠ Preencha o campo "Informações novas" antes de continuar.';
+    errorBox.classList.add('visible');
+    return;
+  }
+
+  const btn = document.getElementById('btnGerar');
+  btn.disabled = true;
+  document.getElementById('btnIcon').innerHTML = '<div class="spinner"></div>';
+  document.getElementById('btnText').textContent = 'Estruturando evolução...';
+  document.getElementById('resultSection').classList.remove('visible');
+  ['step1','step2'].forEach(id => { document.getElementById(id).classList.remove('active'); document.getElementById(id).classList.add('done'); });
+  document.getElementById('step3').classList.add('active');
+
+  try {
+    const response = await fetch('http://localhost:3000/gerar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fichaAnterior, novasInfos, especialidade, especie, formato: window.formatoAtual || 'SOAP' })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || `Erro ${response.status}`);
+    }
+
+    const json = await response.json();
+    const text = json.result;
+    if (!text) throw new Error('Resposta vazia. Tente novamente.');
+
+    document.getElementById('resultContent').textContent = text;
+    document.getElementById('resultSection').classList.add('visible');
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('step3').classList.add('done');
+    document.getElementById('step4').classList.add('active');
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    errorBox.textContent = '❌ Erro: ' + err.message + (err.message.includes('fetch') ? ' — o servidor local está rodando? Execute: npm start' : '');
+    errorBox.classList.add('visible');
+    ['step1','step2'].forEach(id => { document.getElementById(id).classList.add('active'); document.getElementById(id).classList.remove('done'); });
+    document.getElementById('step3').classList.remove('active');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnIcon').textContent = '⚡';
+    document.getElementById('btnText').textContent = 'Gerar Evolução Estruturada';
+  }
+};
+
+window.copiarTexto = () => {
+  navigator.clipboard.writeText(document.getElementById('resultContent').textContent).then(() => {
+    const icon = document.getElementById('copyIcon');
+    const btn = document.querySelector('.btn-copy');
+    icon.textContent = '✓'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)';
+    setTimeout(() => { icon.textContent = '⎘'; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+  });
+};
+
+document.getElementById('fichaAnterior').addEventListener('input', function() { if (this.value.trim()) document.getElementById('step1').classList.add('active'); });
+document.getElementById('novasInfos').addEventListener('input', function() {
+  if (this.value.trim()) { document.getElementById('step2').classList.add('active'); document.getElementById('step3').classList.add('active'); }
+});
+</script>
+</body>
+</html>
