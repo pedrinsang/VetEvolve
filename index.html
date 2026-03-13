@@ -369,7 +369,7 @@ window.gerarEvolucao = async () => {
   document.getElementById('step3').classList.add('active');
 
   try {
-    const response = await fetch('http://localhost:3000/gerar', {
+    const response = await fetch('https://vetevolve-production.up.railway.app/gerar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fichaAnterior, novasInfos, especialidade, especie, formato: window.formatoAtual || 'SOAP' })

@@ -1,3 +1,5 @@
+
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
@@ -133,5 +135,3 @@ app.post('/gerar', async (req, res) => {
 app.listen(3000, () => {
   console.log('✅ VetEvolve backend rodando em http://localhost:3000');
 });
-
-require('dotenv').config();
